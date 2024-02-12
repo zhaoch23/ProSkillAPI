@@ -40,6 +40,29 @@ public class MetaData {
         }
     }
 
+    public void add(String key, double value, int expire) {
+        ObjectWrapper wrapper = data.get(key);
+        BukkitTask task;
+        double curr = 0.0;
+        if (wrapper != null) {
+            NumberParser.parseDouble(wrapper.value.toString());
+            task = wrapper.task;
+            if (task != null) {
+                task.cancel();
+            }
+        }
+        if (expire < 0) { // Permanent
+            data.put(key, new ObjectWrapper(value + curr, Long.MAX_VALUE, null));
+        } else {
+            task = new MetaDataTask(key).runTaskLater(plugin, expire);
+            data.put(key, new ObjectWrapper(
+                    value + curr,
+                    expire * 50L + System.currentTimeMillis(),
+                    task)
+            );
+        }
+    }
+
     public Object get(String key) {
         ObjectWrapper wrapper = data.get(key);
         if (wrapper == null) {
@@ -92,6 +115,17 @@ public class MetaData {
 
     public boolean has(String key) {
         return data.containsKey(key);
+    }
+
+    public void update(String key, int expire) {
+        ObjectWrapper wrapper = data.get(key);
+        if (wrapper != null) {
+            if (wrapper.task != null) {
+                wrapper.task.cancel();
+            }
+            wrapper.task = new MetaDataTask(key).runTaskLater(plugin, expire);
+            wrapper.expire = expire * 50L + System.currentTimeMillis();
+        }
     }
 
     public void remove(String key) {

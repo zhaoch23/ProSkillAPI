@@ -22,8 +22,19 @@ public class MetaDataManager {
         return data.get(entity.getUniqueId());
     }
 
+    public static MetaData getMetaData(UUID uuid) {
+        return data.get(uuid);
+    }
+
     public static void addMetaData(final LivingEntity entity, final String key, final Object value, final int expire) {
         final MetaData metaData = getMetaData(entity, true);
+        if (metaData != null) {
+            metaData.set(key, value, expire);
+        }
+    }
+
+    public static void addMetaData(UUID uuid, final String key, final Object value, final int expire) {
+        final MetaData metaData = getMetaData(uuid);
         if (metaData != null) {
             metaData.set(key, value, expire);
         }
@@ -36,10 +47,24 @@ public class MetaDataManager {
         }
     }
 
+    public static void removeMetaData(UUID uuid, final String key) {
+        final MetaData metaData = getMetaData(uuid);
+        if (metaData != null) {
+            metaData.remove(key);
+        }
+    }
+
     public static void clearData(LivingEntity entity) {
         if (entity == null) return;
 
         final MetaData result = data.remove(entity.getUniqueId());
+        if (result != null) {
+            result.clear();
+        }
+    }
+
+    public static void clearData(UUID uuid) {
+        final MetaData result = data.remove(uuid);
         if (result != null) {
             result.clear();
         }

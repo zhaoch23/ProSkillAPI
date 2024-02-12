@@ -7,18 +7,23 @@ import com.sucy.skill.api.player.PlayerClass;
 import com.sucy.skill.api.player.PlayerData;
 import com.sucy.skill.api.player.PlayerSkill;
 import com.sucy.skill.api.util.FlagManager;
+import com.sucy.skill.api.util.MetaData;
+import com.sucy.skill.api.util.MetaDataManager;
 import com.sucy.skill.dynamic.DynamicSkill;
 import com.sucy.skill.dynamic.data.DataSkill;
+import com.sucy.skill.log.Logger;
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.UUID;
 
 /**
  * SkillAPI © 2018
@@ -214,6 +219,19 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
 
                 }
             }
+        }
+
+        // MetaData
+        if (identifier.startsWith("meta_")) {
+            String[] split = identifier.substring(5).split(":");
+            if (split.length > 2) {
+                Logger.invalid("Invalid meta placeholder: " + identifier + ". Use 'meta_key' or 'meta_uuid:key'");
+                return "0";
+            }
+            String key = split.length == 2 ? split[1] : split[0];
+            UUID uuid = split.length == 2 ? UUID.fromString(split[0]) : player.getUniqueId();
+            MetaData data = MetaDataManager.getMetaData(uuid);
+            return data != null ? data.getString(key, "0") : "0";
         }
 
         if (player == null) {
