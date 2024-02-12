@@ -138,6 +138,7 @@ const Mechanic = {
     HELD_ITEM: {name: 'Held Item', container: false, construct: MechanicHeldItem},
     IMMUNITY: {name: 'Immunity', container: false, construct: MechanicImmunity},
     INTERRUPT: {name: 'Interrupt', container: false, construct: MechanicInterrupt},
+    INTERRUPT_DELAY: {name: 'Interrupt Delay', container: false, construct: MechanicInterruptDelay},
     ITEM: {name: 'Item', container: false, construct: MechanicItem},
     ITEM_PROJECTILE: {name: 'Item Projectile', container: true, construct: MechanicItemProjectile},
     ITEM_REMOVE: {name: 'Item Remove', container: false, construct: MechanicItemRemove},
@@ -2186,6 +2187,14 @@ function MechanicInterrupt() {
     this.super('Interrupt', Type.MECHANIC, false);
 
     this.description = 'Interrupts any channeling being done by each target if applicable.';
+}
+
+extend("MechanicInterruptDelay", "Component");
+
+function MechanicInterruptDelay() {
+    this.super("Interrupt Delay", Type.MECHANIC, false);
+
+    this.description = "Interrupts the delay of a trigger. This is useful for cancelling the effects of a delay trigger if a condition is met. For example, you can use this to stop a delayed damage trigger if the target is healed before the delay is up.";
 }
 
 extend('MechanicItem', 'Component');
