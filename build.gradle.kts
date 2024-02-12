@@ -65,6 +65,12 @@ dependencies {
     compileOnly("com.github.MilkBowl:VaultAPI:1.7")
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.3")
     compileOnly("com.sk89q.worldedit:worldedit-core:7.1.0")
+
+    // Tests
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.0")
+    testImplementation("org.mockito:mockito-core:3.6.0")
+    testImplementation("org.spigotmc:spigot-api:1.16.4-R0.1-SNAPSHOT")
     compileOnly(fileTree("lib"))
 }
 
@@ -73,6 +79,15 @@ version = "R-1.2.12"
 description = "ProSkillAPI"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
+tasks.jar {
+    archiveBaseName.set("ProSkillAPI")
+    archiveVersion.set("$version-zhaoch23-build")
+    archiveExtension.set("jar")
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
 
 tasks.withType<JavaCompile>() {
     options.encoding = "UTF-8"

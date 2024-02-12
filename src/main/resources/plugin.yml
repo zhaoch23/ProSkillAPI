@@ -3,7 +3,7 @@ main: com.sucy.skill.SkillAPI
 version: R-1.2.9
 authors: [Eniripsa96, Sentropic, 枫溪]
 depend: [MCCore]
-softdepend: [Vault, ProtocolLib, Parties, RPGInventory, LibsDisguises, PlaceholderAPI, NoCheatPlus, MythicMobs, WorldGuard, WorldEdit]
+softdepend: [Vault, ProtocolLib, Parties, RPGInventory, LibsDisguises, PlaceholderAPI, NoCheatPlus, MythicMobs, WorldGuard, WorldEdit, GermPlugin]
 loadbefore: [Quests]
 api-version: 1.16
 
