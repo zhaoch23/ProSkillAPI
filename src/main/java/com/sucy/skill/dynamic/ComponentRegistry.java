@@ -287,5 +287,9 @@ public class ComponentRegistry {
         register(new DragonAnimationStopMechanic());
         register(new DragonAnimationBlockMechanic());
         register(new DragonAnimationItemMechanic());
+
+        register(new InterruptDelayMechanic());
+        register(new GermAnimationStartMechanic());
+        register(new GermAnimationStopMechanic());
     }
 }

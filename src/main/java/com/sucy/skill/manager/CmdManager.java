@@ -88,7 +88,9 @@ public class CmdManager {
                 new ConfigurableCommand(api, "forcecastb", SenderType.CONSOLE_ONLY, new CmdForceCastB(), "Player casts the skill NeedCooldown", "<player> <skill> [level]", Permissions.FORCE),
                 new ConfigurableCommand(api, "forceprofess", SenderType.CONSOLE_ONLY, new CmdForceProfess(), "Professes a player", "<player> <class>", Permissions.FORCE),
                 new ConfigurableCommand(api, "forcereset", SenderType.CONSOLE_ONLY, new CmdForceReset(), "Resets player data", "<player> [account]", Permissions.FORCE),
-                new ConfigurableCommand(api, "forceskill", SenderType.CONSOLE_ONLY, new CmdForceSkill(), "Modifies skill levels", "<player> <up|down|reset> <skill>", Permissions.FORCE)
+                new ConfigurableCommand(api, "forceskill", SenderType.CONSOLE_ONLY, new CmdForceSkill(), "Modifies skill levels", "<player> <up|down|reset> <skill>", Permissions.FORCE),
+                // Interrupt delayed tasks
+                new ConfigurableCommand(api, "interrupt", SenderType.CONSOLE_ONLY, new CmdInterruptDelayed(), "Interrupts delayed tasks", "<player>", Permissions.FORCE)
         );
         if (SkillAPI.getSettings().isOnePerClass()) {
             root.addSubCommand(new ConfigurableCommand(api, "switch", SenderType.PLAYER_ONLY, new CmdSwitch(), "Changes class", "<class>", Permissions.BASIC));
