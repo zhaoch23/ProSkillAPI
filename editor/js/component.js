@@ -195,7 +195,9 @@ const Mechanic = {
     Dragon_Animation_Item: {name: "Dragon Animation Item", container: false, construct: MechanicDragonAnimationItem},
     Dragon_Animation_Block: {name: "Dragon Animation Block", container: false, construct: MechanicDragonAnimationBlock},
     VALUE_SCRIPT: {name: 'Value Script', container: false, construct: MechanicValueScript},
-    KETHER: {name: "Kether", container: false, construct: MechanicKether}
+    KETHER: {name: "Kether", container: false, construct: MechanicKether},
+    Germ_Animation_Start: {name: "Germ Animation Start", container: false, construct: MechanicGermAnimationStart},
+    Germ_Animation_Stop: {name: "Germ Animation Stop", container: false, construct: MechanicGermAnimationStop}
 };
 
 let saveIndex;
@@ -3252,6 +3254,36 @@ function MechanicDragonAnimationStop() {
     );
     this.data.push(new AttributeValue('过度时间', 'time', 0, 0)
         .setTooltip('这个选项只有非玩家的其他模型动画生效')
+    );
+}
+
+extend("MechanicGermAnimationStart", "Component");
+
+function MechanicGermAnimationStart() {
+    this.super("Germ Animation Start", Type.MECHANIC, false);
+
+    this.description = "使释放者(不是目标)播放动画给周围的玩家";
+
+    this.data.push(new StringValue("动作名称", "name", "动作名称")
+        .setTooltip("这里直接写动作名称即可")
+    );
+    this.data.push(new DoubleValue("动作速度", "speed", 1)
+        .setTooltip("动画播放速度")
+    );
+    this.data.push(new ListValue('逆向播放', 'reversed', ['True', 'False'], 'False')
+        .setTooltip('是否逆向播放动画')
+    );
+}
+
+extend("MechanicGermAnimationStop", "Component");
+
+function MechanicGermAnimationStop() {
+    this.super("Germ Animation Stop", Type.MECHANIC, false);
+
+    this.description = "停止释放者(不是目标)的动画给周围的玩家";
+
+    this.data.push(new StringValue("动作名称", "name", "动作名称")
+        .setTooltip("这里直接写动作名称即可")
     );
 }
 
