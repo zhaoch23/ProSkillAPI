@@ -58,7 +58,7 @@ public class DelayMechanic extends MechanicComponent {
             return false;
         }
         double seconds = parseValues(caster, SECONDS, level, 2.0);
-        DelayedTaskManager.runTaskLater(caster.getUniqueId(),
+        DelayedTaskManager.runTaskLater(caster.getUniqueId().toString(),
                 () -> executeChildren(caster, level, targets),
                 (long) (seconds * 20));
         return true;

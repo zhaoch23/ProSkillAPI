@@ -17,7 +17,6 @@ import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,47 +30,14 @@ import java.util.UUID;
  */
 public class PlaceholderAPIHook extends PlaceholderExpansion {
 
-    private SkillAPI plugin;
+    private final SkillAPI plugin;
 
     public PlaceholderAPIHook(SkillAPI plugin) {
         this.plugin = plugin;
     }
 
-    @Override
-    public boolean persist() {
-        return true;
-    }
-
     public static String format(final String message, final Player player) {
         return PlaceholderAPI.setPlaceholders(player, message);
-    }
-
-    @Override
-    public boolean canRegister() {
-        return true;
-    }
-
-    @NotNull
-    @Override
-    public String getAuthor() {
-        return "Spark";
-    }
-
-    @NotNull
-    @Override
-    public String getIdentifier() {
-        return "sapi";
-    }
-
-    @NotNull
-    @Override
-    public String getVersion() {
-        return "1.0.0";
-    }
-
-    @Override
-    public String onRequest(OfflinePlayer player, @NotNull String identifier) {
-        return request(player, identifier);
     }
 
     public static String request(OfflinePlayer player, String identifier) {
@@ -219,19 +185,6 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
 
                 }
             }
-        }
-
-        // MetaData
-        if (identifier.startsWith("meta_")) {
-            String[] split = identifier.substring(5).split(":");
-            if (split.length > 2) {
-                Logger.invalid("Invalid meta placeholder: " + identifier + ". Use 'meta_key' or 'meta_uuid:key'");
-                return "0";
-            }
-            String key = split.length == 2 ? split[1] : split[0];
-            UUID uuid = split.length == 2 ? UUID.fromString(split[0]) : player.getUniqueId();
-            MetaData data = MetaDataManager.getMetaData(uuid);
-            return data != null ? data.getString(key, "0") : "0";
         }
 
         if (player == null) {
@@ -394,6 +347,18 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
                 String key = idSplit[1];
                 return String.valueOf(DataSkill.getValue(playerData.getUUID(), key));
             }
+            // MetaData
+            if (identifier.startsWith("default_meta:")) {
+                String[] split = identifier.substring(13).split(":");
+                if (split.length > 2) {
+                    Logger.invalid("Invalid meta placeholder: " + identifier + ". Use 'meta_key' or 'meta_uuid:key'");
+                    return "0";
+                }
+                String key = split.length == 2 ? split[1] : split[0];
+                UUID uuid = split.length == 2 ? UUID.fromString(split[0]) : player.getUniqueId();
+                MetaData meta = MetaDataManager.getMetaData(uuid);
+                return data != null ? meta.getString(key, "0") : "0";
+            }
         }
 
         if (identifier.startsWith("player_")) {
@@ -435,7 +400,7 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
                         return String.valueOf((int) playerClass.getExp());
                     }
                     if (identifier.equals("player_" + groupName + "_srequiredexp")) {
-                        return String.valueOf((int) playerClass.getRequiredExp());
+                        return String.valueOf(playerClass.getRequiredExp());
                     }
                     if (identifier.equals("player_" + groupName + "_level")) {
                         return String.valueOf(playerClass.getLevel());
@@ -472,5 +437,38 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean persist() {
+        return true;
+    }
+
+    @Override
+    public boolean canRegister() {
+        return true;
+    }
+
+    @NotNull
+    @Override
+    public String getAuthor() {
+        return "Spark";
+    }
+
+    @NotNull
+    @Override
+    public String getIdentifier() {
+        return "sapi";
+    }
+
+    @NotNull
+    @Override
+    public String getVersion() {
+        return "1.0.0";
+    }
+
+    @Override
+    public String onRequest(OfflinePlayer player, @NotNull String identifier) {
+        return request(player, identifier);
     }
 }

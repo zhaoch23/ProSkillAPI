@@ -23,7 +23,7 @@ public class InterruptDelayMechanic extends MechanicComponent {
 
         for (LivingEntity target : targets) {
             if (target != null) {
-                DelayedTaskManager.clearTasks(target.getUniqueId());
+                DelayedTaskManager.clearTasks(target.getUniqueId().toString());
             }
         }
 

@@ -14,8 +14,8 @@ import java.util.List;
  */
 public class GermAnimationStartMechanic extends MechanicComponent {
 
-    private static final  String NAME = "name";
-    private static final  String SPEED = "speed";
+    private static final String NAME = "name";
+    private static final String SPEED = "speed";
     private static final String REVERSED = "reversed";
 
 
@@ -27,14 +27,13 @@ public class GermAnimationStartMechanic extends MechanicComponent {
 
     @Override
     public boolean execute(LivingEntity caster, int level, List<LivingEntity> targets) {
-        if (targets.size() == 0 || !settings.has(NAME)) {
+        if (!settings.has(NAME)) {
             return false;
         }
 
         String animName = settings.getString(NAME);
         float speed = (float) parseValues(caster, SPEED, level, 1);
         boolean reversed = Boolean.parseBoolean(settings.getString(REVERSED, "False"));
-
         AnimDataDTO animDataDTO = new AnimDataDTO(animName, speed, reversed);
         for (Player player : caster.getWorld().getPlayers()) {
             // Only send the packet to players within 64 blocks

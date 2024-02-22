@@ -24,7 +24,7 @@ public class CmdInterruptDelayed implements IFunction {
             return;
         }
 
-        DelayedTaskManager.clearTasks(player.getUniqueId());
+        DelayedTaskManager.clearTasks(player.getUniqueId().toString());
         command.sendMessage(sender, SUCCESS, "Cleared all delayed tasks for " + args[0]);
     }
 }
