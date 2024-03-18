@@ -198,7 +198,8 @@ const Mechanic = {
     VALUE_SCRIPT: {name: 'Value Script', container: false, construct: MechanicValueScript},
     KETHER: {name: "Kether", container: false, construct: MechanicKether},
     Germ_Animation_Start: {name: "Germ Animation Start", container: false, construct: MechanicGermAnimationStart},
-    Germ_Animation_Stop: {name: "Germ Animation Stop", container: false, construct: MechanicGermAnimationStop}
+    Germ_Animation_Stop: {name: "Germ Animation Stop", container: false, construct: MechanicGermAnimationStop},
+    Germ_Play_Sound: {name: "Germ Play Sound", container: false, construct: MechanicGermPlaySound}
 };
 
 let saveIndex;
@@ -3294,6 +3295,38 @@ function MechanicGermAnimationStop() {
     this.data.push(new StringValue("动作名称", "name", "动作名称")
         .setTooltip("这里直接写动作名称即可")
     );
+}
+
+extend("MechanicGermPlaySound", "Component");
+
+function MechanicGermPlaySound() {
+    this.super('Germ Play Sound', Type.MECHANIC, false);
+
+    this.description = '播放声音给周围的玩家';
+
+    this.data.push(new StringValue('声音名称', 'soundName', '声音名称')
+        .setTooltip("声音的名字")
+    );
+    this.data.push(new ListValue('声音类型', 'soundType',
+        ['AMBIENT', 'BLOCK', 'HOSTILE', 'MASTER', 'MUSIC', 'NEUTRAL', 'PLAYER', 'RECORD', 'VOICE', 'WEATHER'], 'AMBIENT')
+        .setTooltip("声音的类型")
+    );
+    this.data.push(new ListValue('声音位置', 'location', ['caster', 'targets'], 'caster')
+        .setTooltip("声音的位置. caster为释放者位置 target为选取的目标位置。多个目标播放多个声音")
+    );
+    this.data.push(new DoubleValue('音量', 'volume', 1)
+        .setTooltip("Specifies the distance that the sound can be heard. " +
+            "If not specified, defaults to 1. For values less than 1, the volume diminishes. " +
+            "For values greater than 1, the sound does not actually grow louder, " +
+            "but its audible range (a 16-block radius at 1) is multiplied by volume.")
+    );
+    this.data.push(new DoubleValue('音调', 'pitch', 1)
+        .setTooltip("It must be between 0.0 and 2.0 (inclusive.) " +
+            "Values less than 0.5 are equivalent to 0.5. " +
+            "Values lower than 1 lower the pitch and increase the duration; " +
+            "values greater than 1 raise the pitch and reduce the duration.")
+    );
+    this.data.push(new IntValue('延迟时间(tick)', 'delayTick', 0))
 }
 
 extend('MechanicKether', 'Component');

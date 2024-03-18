@@ -1,3 +1,11 @@
+该板ProSkillAPI是在FxRayHughes的ProSkillAPI基础上进行修改的，原项目地址：https://github.com/FxRayHughes/ProSkillAPI
+
+在此之上增加了更多萌芽引擎相关的Mechanics
+
+以下是原repo介绍:
+
+***
+
 正式Wiki: https://xv5zac7cto.feishu.cn/docx/doxcnqu6PQN8RMvxsnFdCUdb5Lb
 
 本插件是ProSkillAPI在R1.1.6上最后一个版本的分支

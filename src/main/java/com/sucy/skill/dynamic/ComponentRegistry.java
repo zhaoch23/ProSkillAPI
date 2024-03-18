@@ -203,7 +203,6 @@ public class ComponentRegistry {
         register(new ArmorMechanic());
         register(new ArmorStandMechanic());
         register(new ArmorStandPoseMechanic());
-        register(new AttributeMechanic());
         register(new BlockMechanic());
         register(new BuffMechanic());
         register(new CancelEffectMechanic());
@@ -291,5 +290,6 @@ public class ComponentRegistry {
         register(new InterruptDelayMechanic());
         register(new GermAnimationStartMechanic());
         register(new GermAnimationStopMechanic());
+        register(new GermPlaySoundMechanic());
     }
 }
