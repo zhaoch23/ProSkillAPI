@@ -7,11 +7,13 @@ import com.sucy.skill.api.attribute.AttributeAPI;
 import com.sucy.skill.api.skills.PassiveSkill;
 import com.sucy.skill.api.skills.Skill;
 import com.sucy.skill.api.skills.SkillCastAPI;
+import com.sucy.skill.dynamic.DynamicSkill;
 import com.sucy.skill.listener.MechanicListener;
 import com.sucy.skill.task.RemoveTask;
 import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
@@ -43,6 +45,9 @@ public class ArmorStandMechanic extends MechanicComponent {
 
     private static final String SKILLS = "skills";
 
+    private static final String TICK_PERIOD = "period";
+    private static final String REMEMBER = "remember";
+
     @Override
     public String getKey() {
         return "armor stand";
@@ -66,6 +71,9 @@ public class ArmorStandMechanic extends MechanicComponent {
         double right = parseValues(caster, RIGHT, level, 0);
 
         List<String> skills = settings.getStringList(SKILLS);
+
+        int tickPeriod = settings.getInt(TICK_PERIOD, -1);
+        String remember = settings.getString(REMEMBER, null);
 
         List<LivingEntity> armorStands = new ArrayList<>();
         for (LivingEntity target : targets) {
@@ -106,15 +114,64 @@ public class ArmorStandMechanic extends MechanicComponent {
             armorStands.add(armorStand);
 
             ArmorStandInstance instance;
-            if (follow) {
-                instance = new ArmorStandInstance(armorStand, target, forward, upward, right);
+            if (follow || tickPeriod > 0) {
+                instance = new ArmorStandInstance(
+                        armorStand,
+                        target,
+                        forward,
+                        upward,
+                        right,
+                        tickPeriod > 0 ? new OnTickTask(caster, level, targets, tickPeriod) : null
+                );
             } else {
                 instance = new ArmorStandInstance(armorStand, target);
             }
             ArmorStandManager.register(instance, target, key);
         }
-        executeChildren(caster, level, armorStands);
+        // If tickPeriod is 0, execute children immediately
+        if (tickPeriod == 0)
+            executeChildren(caster, level, armorStands);
+
+        // Remember the armor stands
+        if (remember != null && !remember.isEmpty()) {
+            DynamicSkill.getCastData(caster).put(remember, armorStands);
+        }
+
         new RemoveTask(armorStands, duration);
         return targets.size() > 0;
+    }
+
+    private class OnTickTask extends BukkitRunnable {
+        private final List<LivingEntity> targets;
+        private final LivingEntity caster;
+        private final int level;
+        private final int tickPeriod;
+        private int tickCount = 0;
+
+        OnTickTask(LivingEntity caster, int level, List<LivingEntity> targets, int tickPeriod) {
+            this.targets = new ArrayList<>(targets);
+            this.caster = caster;
+            this.level = level;
+            this.tickPeriod = tickPeriod;
+        }
+
+        @Override
+        public void run() {
+            tickCount++;
+            if (tickCount % tickPeriod != 0) {
+                return;
+            }
+            if (caster.isDead() || !caster.isValid()) {
+                cancel();
+                return;
+            }
+
+            targets.removeIf(target -> target.isDead() || !target.isValid());
+            executeChildren(caster, level, targets);
+
+            if (skill.checkCancelled()) {
+                cancel();
+            }
+        }
     }
 }

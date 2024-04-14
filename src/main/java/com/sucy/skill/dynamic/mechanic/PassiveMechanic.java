@@ -32,10 +32,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Executes child components continuously
@@ -102,11 +99,7 @@ public class PassiveMechanic extends MechanicComponent {
 
         @Override
         public void run() {
-            for (int i = 0; i < targets.size(); i++) {
-                if (targets.get(i).isDead() || !targets.get(i).isValid()) {
-                    targets.remove(i);
-                }
-            }
+            targets.removeIf(target -> target.isDead() || !target.isValid());
             if (!skill.isActive(caster) || targets.size() == 0) {
                 cancel();
                 return;

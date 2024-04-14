@@ -3,12 +3,14 @@ package com.sucy.skill.api.armorstand;
 import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 public class ArmorStandInstance {
     private final ArmorStand armorStand;
     private final LivingEntity target;
     private final boolean follow;
+    private final BukkitRunnable tickTask;
     private double forward;
     private double upward;
     private double right;
@@ -19,14 +21,35 @@ public class ArmorStandInstance {
         this.armorStand = armorStand;
         this.target = target;
         this.follow = false;
+        this.tickTask = null;
     }
-    public ArmorStandInstance(ArmorStand armorStand, LivingEntity target, double forward, double upward, double right) {
+    public ArmorStandInstance(ArmorStand armorStand,
+                              LivingEntity target,
+                              double forward,
+                              double upward,
+                              double right) {
         this.armorStand = armorStand;
         this.target = target;
         this.forward = forward;
         this.upward = upward;
         this.right = right;
         this.follow = true;
+        this.tickTask = null;
+    }
+
+    public ArmorStandInstance(ArmorStand armorStand,
+                              LivingEntity target,
+                              double forward,
+                              double upward,
+                              double right,
+                              BukkitRunnable tickTask) {
+        this.armorStand = armorStand;
+        this.target = target;
+        this.forward = forward;
+        this.upward = upward;
+        this.right = right;
+        this.follow = true;
+        this.tickTask = tickTask;
     }
 
     /**
@@ -53,6 +76,9 @@ public class ArmorStandInstance {
             Vector side = dir.clone().crossProduct(UP);
             loc.add(dir.multiply(forward)).add(0, upward, 0).add(side.multiply(right));
             armorStand.teleport(loc);
+        }
+        if (tickTask != null) {
+            tickTask.run();
         }
     }
 }

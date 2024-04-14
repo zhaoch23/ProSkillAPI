@@ -1686,6 +1686,12 @@ function MechanicArmorStand() {
     this.data.push(new AttributeValue('Right Offset', 'right', 0, 0)
         .setTooltip('How far to the right the armorstand should be of the target. A negative value will put it to the left.')
     );
+    this.data.push(new IntValue('Tick Period', 'period', -1)
+        .setTooltip('多长时间触发一次Children. -1为不触发, 0为立刻触发, 1为每tick触发, 其余为每x tick触发')
+    );
+    this.data.push(new StringValue('Remember Key', 'remember', '')
+        .setTooltip("是否记录盔甲架，后续可以使用Remember Target来获取. 为空则不记录")
+    );
     this.data.push(new StringListValue('Skills 一行一个', 'skills', [])
         .setTooltip('这会视为盔甲架释放的技能 你可以在后续给他属性，但造成伤害/治疗会以召唤者为伤害/治疗源(伤害/治疗属性来自于召唤者)')
     );
@@ -3272,10 +3278,13 @@ extend("MechanicGermAnimationStart", "Component");
 function MechanicGermAnimationStart() {
     this.super("Germ Animation Start", Type.MECHANIC, false);
 
-    this.description = "使释放者(不是目标)播放动画给周围的玩家";
+    this.description = "使释放者或者目标播放动画给周围的玩家";
 
     this.data.push(new StringValue("动作名称", "name", "动作名称")
         .setTooltip("这里直接写动作名称即可")
+    );
+    this.data.push(new ListValue('动画执行人', 'target', ['caster', 'targets'], 'caster')
+        .setTooltip('动画执行人. caster为释放者 target为选取的目标。多个目标播放多个动画')
     );
     this.data.push(new DoubleValue("动作速度", "speed", 1)
         .setTooltip("动画播放速度")
@@ -3290,10 +3299,13 @@ extend("MechanicGermAnimationStop", "Component");
 function MechanicGermAnimationStop() {
     this.super("Germ Animation Stop", Type.MECHANIC, false);
 
-    this.description = "停止释放者(不是目标)的动画给周围的玩家";
+    this.description = "停止释放者或目标的动画给周围的玩家";
 
     this.data.push(new StringValue("动作名称", "name", "动作名称")
         .setTooltip("这里直接写动作名称即可")
+    );
+    this.data.push(new ListValue('停止动画目标', 'target', ['caster', 'targets'], 'caster')
+        .setTooltip('停止动画的目标. caster为释放者 target为选取的目标。')
     );
 }
 

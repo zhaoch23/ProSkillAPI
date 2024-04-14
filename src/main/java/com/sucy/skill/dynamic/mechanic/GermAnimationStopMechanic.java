@@ -4,6 +4,7 @@ import com.germ.germplugin.api.GermPacketAPI;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -14,6 +15,7 @@ import java.util.List;
 public class GermAnimationStopMechanic extends MechanicComponent{
 
     private static final String NAME = "name";
+    private static final String TARGET = "target";
 
     @Override
     public String getKey() {
@@ -28,11 +30,17 @@ public class GermAnimationStopMechanic extends MechanicComponent{
 
         String animName = settings.getString(NAME);
 
+        final List<LivingEntity> animationTargets =
+                settings.getString(TARGET, "caster").equalsIgnoreCase("caster") ?
+                        Collections.singletonList(caster) : targets;
+
         for (Player player : caster.getWorld().getPlayers()) {
-            // Only send the packet to players within 64 blocks
-            if (caster.getLocation().distance(player.getLocation()) < 64d) {
-                GermPacketAPI.stopModelAnimation(player, caster.getEntityId(), animName);
-                GermPacketAPI.sendBendClear(player, caster.getEntityId());
+            for (LivingEntity target : animationTargets) {
+                // Only send the packet to players within 64 blocks
+                if (target.getLocation().distance(player.getLocation()) < 64d) {
+                    GermPacketAPI.stopModelAnimation(player, target.getEntityId(), animName);
+                    GermPacketAPI.sendBendClear(player, target.getEntityId());
+                }
             }
         }
 
