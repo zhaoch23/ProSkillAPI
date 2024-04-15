@@ -1,6 +1,7 @@
 package com.sucy.skill.dynamic.mechanic;
 
 import com.sucy.skill.SkillAPI;
+import com.sucy.skill.api.Settings;
 import com.sucy.skill.api.armorstand.ArmorStandInstance;
 import com.sucy.skill.api.armorstand.ArmorStandManager;
 import com.sucy.skill.api.attribute.AttributeAPI;
@@ -8,8 +9,10 @@ import com.sucy.skill.api.skills.PassiveSkill;
 import com.sucy.skill.api.skills.Skill;
 import com.sucy.skill.api.skills.SkillCastAPI;
 import com.sucy.skill.dynamic.DynamicSkill;
+import com.sucy.skill.dynamic.EffectComponent;
 import com.sucy.skill.listener.MechanicListener;
 import com.sucy.skill.task.RemoveTask;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.LivingEntity;
@@ -18,6 +21,7 @@ import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 import static com.sucy.skill.dynamic.mechanic.WolfMechanic.LEVEL;
 import static com.sucy.skill.dynamic.mechanic.WolfMechanic.SKILL_META;
@@ -29,7 +33,7 @@ public class ArmorStandMechanic extends MechanicComponent {
     private static final Vector UP = new Vector(0, 1, 0);
 
     private static final String KEY = "key";
-    private static final String DURATION = "duration";
+    public static final String DURATION = "duration";
     private static final String NAME = "name";
     private static final String NAME_VISIBLE = "name-visible";
     private static final String FOLLOW = "follow";
@@ -57,22 +61,59 @@ public class ArmorStandMechanic extends MechanicComponent {
     public boolean execute(LivingEntity caster, int level, List<LivingEntity> targets) {
         String key = settings.getString(KEY, skill.getName());
         int duration = (int) (20 * parseValues(caster, DURATION, level, 5));
+        int tickPeriod = settings.getInt(TICK_PERIOD, -1);
+
+        List<LivingEntity> armorStands = generateArmorStands( this,
+            caster, level, targets, settings,
+            (armorStand, target) -> {
+                // If follow is enabled, create an instance to update the armor stand
+                ArmorStandInstance instance;
+                BukkitRunnable tickTask = tickPeriod > 0 ? new OnTickTask(caster, level, targets, tickPeriod) : null;
+                if (settings.getBool(FOLLOW, false)) {
+                    instance = new ArmorStandInstance(
+                        armorStand,
+                        target,
+                        parseValues(caster, FORWARD, level, 0),
+                        parseValues(caster, UPWARD, level, 0),
+                        parseValues(caster, RIGHT, level, 0),
+                        tickTask
+                    );
+                } else { // Otherwise, just register the armor stand
+                    instance = new ArmorStandInstance(armorStand, target, tickTask);
+                }
+                // Register the armor stand
+                ArmorStandManager.register(instance, target, key);
+        });
+
+        // If tickPeriod is 0, execute children immediately
+        if (tickPeriod == 0)
+            executeChildren(caster, level, armorStands);
+
+        new RemoveTask(armorStands, duration);
+        return targets.size() > 0;
+    }
+
+    public static List<LivingEntity> generateArmorStands(
+            EffectComponent component,
+            LivingEntity caster,
+            int level,
+            List<LivingEntity> targets,
+            Settings settings,
+            BiConsumer<ArmorStand, LivingEntity> apply) {
         String name = settings.getString(NAME, "Armor Stand");
         boolean nameVisible = settings.getBool(NAME_VISIBLE, false);
-        boolean follow = settings.getBool(FOLLOW, false);
         boolean gravity = settings.getBool(GRAVITY, false);
         boolean small = settings.getBool(SMALL, false);
         boolean arms = settings.getBool(ARMS, false);
         boolean base = settings.getBool(BASE, false);
         boolean visible = settings.getBool(VISIBLE, true);
         boolean marker = settings.getBool(MARKER, false);
-        double forward = parseValues(caster, FORWARD, level, 0);
-        double upward = parseValues(caster, UPWARD, level, 0);
-        double right = parseValues(caster, RIGHT, level, 0);
+        double forward = component.parseValues(caster, FORWARD, level, 0);
+        double upward = component.parseValues(caster, UPWARD, level, 0);
+        double right =component.parseValues(caster, RIGHT, level, 0);
 
         List<String> skills = settings.getStringList(SKILLS);
 
-        int tickPeriod = settings.getInt(TICK_PERIOD, -1);
         String remember = settings.getString(REMEMBER, null);
 
         List<LivingEntity> armorStands = new ArrayList<>();
@@ -113,35 +154,18 @@ public class ArmorStandMechanic extends MechanicComponent {
 
             armorStands.add(armorStand);
 
-            ArmorStandInstance instance;
-            if (follow || tickPeriod > 0) {
-                instance = new ArmorStandInstance(
-                        armorStand,
-                        target,
-                        forward,
-                        upward,
-                        right,
-                        tickPeriod > 0 ? new OnTickTask(caster, level, targets, tickPeriod) : null
-                );
-            } else {
-                instance = new ArmorStandInstance(armorStand, target);
+            if (remember != null && !remember.isEmpty()) {
+                DynamicSkill.getCastData(caster).put(remember, armorStands);
             }
-            ArmorStandManager.register(instance, target, key);
-        }
-        // If tickPeriod is 0, execute children immediately
-        if (tickPeriod == 0)
-            executeChildren(caster, level, armorStands);
 
-        // Remember the armor stands
-        if (remember != null && !remember.isEmpty()) {
-            DynamicSkill.getCastData(caster).put(remember, armorStands);
+            if (apply != null) {
+                apply.accept(armorStand, target);
+            }
         }
-
-        new RemoveTask(armorStands, duration);
-        return targets.size() > 0;
+        return armorStands;
     }
 
-    private class OnTickTask extends BukkitRunnable {
+     class OnTickTask extends BukkitRunnable {
         private final List<LivingEntity> targets;
         private final LivingEntity caster;
         private final int level;
@@ -157,6 +181,15 @@ public class ArmorStandMechanic extends MechanicComponent {
 
         @Override
         public void run() {
+            // Check if this is on the main thread
+            if (!Bukkit.isPrimaryThread()) {
+                Bukkit.getScheduler().runTask(SkillAPI.singleton, this::tick);
+                return;
+            }
+            tick();
+        }
+
+        private void tick() {
             tickCount++;
             if (tickCount % tickPeriod != 0) {
                 return;

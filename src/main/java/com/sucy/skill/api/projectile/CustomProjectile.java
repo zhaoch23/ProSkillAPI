@@ -43,34 +43,23 @@ import org.bukkit.util.Vector;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 
 /**
  * Base class for custom projectiles
  */
 public abstract class CustomProjectile extends BukkitRunnable implements Metadatable, Followable {
+    private static final Vector X_VEC = new Vector(1, 0, 0);
+    private static final double DEGREE_TO_RAD = Math.PI / 180;
+    private static final Vector vel = new Vector();
     private static Constructor<?> aabbConstructor;
     private static Method getEntities;
     private static Method getBukkitEntity;
-    private static Method getEntitiesGuava;
-    private static Method getHandle;
-
-    private static boolean isLivingEntity(Object thing) {
-        try {
-            return getBukkitEntity.invoke(thing) instanceof LivingEntity;
-        } catch (Exception ex) {
-            return false;
-        }
-    }
-
     private static final Predicate<Object> JAVA_PREDICATE = CustomProjectile::isLivingEntity;
     private static final com.google.common.base.Predicate<Object> GUAVA_PREDICATE = CustomProjectile::isLivingEntity;
-
+    private static Method getEntitiesGuava;
+    private static Method getHandle;
 
     static {
         try {
@@ -92,12 +81,9 @@ public abstract class CustomProjectile extends BukkitRunnable implements Metadat
     }
 
     private final HashMap<String, List<MetadataValue>> metadata = new HashMap<String, List<MetadataValue>>();
-
     private final Set<Integer> hit = new HashSet<Integer>();
-
     private ProjectileCallback callback;
-    private LivingEntity thrower;
-
+    private final LivingEntity thrower;
     private boolean enemy = true;
     private boolean ally = false;
     private boolean valid = true;
@@ -110,6 +96,125 @@ public abstract class CustomProjectile extends BukkitRunnable implements Metadat
     public CustomProjectile(LivingEntity thrower) {
         this.thrower = thrower;
         runTaskTimer(Bukkit.getPluginManager().getPlugin("SkillAPI"), 1, 1);
+    }
+
+    private static boolean isLivingEntity(Object thing) {
+        try {
+            return getBukkitEntity.invoke(thing) instanceof LivingEntity;
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
+    /**
+     * Calculates the directions for projectiles spread from
+     * the centered direction using the given angle and
+     * number of projectiles to be fired.
+     *
+     * @param dir    center direction of the spread
+     * @param angle  angle which to spread at
+     * @param amount amount of directions to calculate
+     * @return the list of calculated directions
+     */
+    public static ArrayList<Vector> calcSpread(Vector dir, double angle, int amount) {
+        // Special cases
+        if (amount <= 0) {
+            return new ArrayList<>();
+        }
+
+        ArrayList<Vector> list = new ArrayList<Vector>();
+
+        // One goes straight if odd amount
+        if (amount % 2 == 1) {
+            list.add(dir);
+            amount--;
+        }
+
+        if (amount <= 0) {
+            return list;
+        }
+
+        // Get the base velocity
+        Vector base = dir.clone();
+        base.setY(0);
+        base.normalize();
+        vel.setX(1);
+        vel.setY(0);
+        vel.setZ(0);
+
+        // Get the vertical angle
+        double vBaseAngle = Math.acos(Math.max(-1, Math.min(base.dot(dir), 1)));
+        if (dir.getY() < 0) {
+            vBaseAngle = -vBaseAngle;
+        }
+        double hAngle = Math.acos(Math.max(-1, Math.min(1, base.dot(X_VEC)))) / DEGREE_TO_RAD;
+        if (dir.getZ() < 0) {
+            hAngle = -hAngle;
+        }
+
+        // Calculate directions
+        double angleIncrement = angle / (amount - 1);
+        for (int i = 0; i < amount / 2; i++) {
+            for (int direction = -1; direction <= 1; direction += 2) {
+                // Initial calculations
+                double bonusAngle = angle / 2 * direction - angleIncrement * i * direction;
+                double totalAngle = hAngle + bonusAngle;
+                double vAngle = vBaseAngle * Math.cos(bonusAngle * DEGREE_TO_RAD);
+                double x = Math.cos(vAngle);
+
+                // Get the velocity
+                vel.setX(x * Math.cos(totalAngle * DEGREE_TO_RAD));
+                vel.setY(Math.sin(vAngle));
+                vel.setZ(x * Math.sin(totalAngle * DEGREE_TO_RAD));
+
+                // Launch the projectile
+                list.add(vel.clone());
+            }
+        }
+
+        return list;
+    }
+
+    /**
+     * Calculates the locations to spawn projectiles to rain them down
+     * over a given location.
+     *
+     * @param loc    the center location to rain on
+     * @param radius radius of the circle
+     * @param height height above the target to use
+     * @param amount amount of locations to calculate
+     * @return list of locations to spawn projectiles
+     */
+    public static ArrayList<Location> calcRain(Location loc, double radius, double height, int amount) {
+        ArrayList<Location> list = new ArrayList<Location>();
+        if (amount <= 0) {
+            return list;
+        }
+        loc.add(0, height, 0);
+
+        // One would be in the center
+        list.add(loc);
+        amount--;
+
+        // Calculate locations
+        int tiers = (amount + 7) / 8;
+        for (int i = 0; i < tiers; i++) {
+            double rad = radius * (tiers - i) / tiers;
+            int tierNum = Math.min(amount, 8);
+            double increment = 360 / tierNum;
+            double angle = (i % 2) * 22.5;
+            for (int j = 0; j < tierNum; j++) {
+                double dx = Math.cos(angle) * rad;
+                double dz = Math.sin(angle) * rad;
+                Location l = loc.clone();
+                l.add(dx, 0, dz);
+                list.add(l);
+                angle += increment;
+            }
+            amount -= tierNum;
+        }
+
+        return list;
     }
 
     /**
@@ -158,7 +263,9 @@ public abstract class CustomProjectile extends BukkitRunnable implements Metadat
         // Leaving a loaded chunk
         if (!getLocation().getChunk().isLoaded()) {
             cancel();
-            Bukkit.getPluginManager().callEvent(expire());
+            Event event = expire();
+            if (event != null)
+                Bukkit.getPluginManager().callEvent(event);
             return false;
         }
 
@@ -174,7 +281,9 @@ public abstract class CustomProjectile extends BukkitRunnable implements Metadat
     public void applyLanded() {
         if (valid) {
             cancel();
-            Bukkit.getPluginManager().callEvent(land());
+            Event event = land();
+            if (event != null)
+                Bukkit.getPluginManager().callEvent(land());
             if (callback != null)
                 callback.callback(this, null);
         }
@@ -182,7 +291,10 @@ public abstract class CustomProjectile extends BukkitRunnable implements Metadat
 
     /**
      * Checks if the projectile collides with a given list of entities
-     * Returns true if another check should happen, false other wise
+     *
+     * @param pierce whether the projectile pierces through entities.
+     *               If set false the cancel the projectile after hitting the first entity
+     * @return true if another check should happen, false otherwise
      */
     protected boolean checkCollision(final boolean pierce) {
         for (LivingEntity entity : getColliding()) {
@@ -196,7 +308,9 @@ public abstract class CustomProjectile extends BukkitRunnable implements Metadat
             if (!ally && !this.enemy) continue;
             if (!SkillAPI.getSettings().isValidTarget(entity)) continue;
 
-            Bukkit.getPluginManager().callEvent(hit(entity));
+            Event event = hit(entity);
+            if (event != null)
+                Bukkit.getPluginManager().callEvent(hit(entity));
 
             if (callback != null)
                 callback.callback(this, entity);
@@ -330,7 +444,6 @@ public abstract class CustomProjectile extends BukkitRunnable implements Metadat
      * <p>If no metadata was set with the key, this will instead return null</p>
      *
      * @param key the key for the metadata
-     *
      * @return the metadata value
      */
     @Override
@@ -342,7 +455,6 @@ public abstract class CustomProjectile extends BukkitRunnable implements Metadat
      * <p>Checks whether or not this has a metadata set for the key.</p>
      *
      * @param key the key for the metadata
-     *
      * @return whether or not there is metadata set for the key
      */
     @Override
@@ -369,122 +481,5 @@ public abstract class CustomProjectile extends BukkitRunnable implements Metadat
      */
     public void setCallback(ProjectileCallback callback) {
         this.callback = callback;
-    }
-
-    private static final Vector X_VEC = new Vector(1, 0, 0);
-    private static final double DEGREE_TO_RAD = Math.PI / 180;
-    private static final Vector vel = new Vector();
-
-    /**
-     * Calculates the directions for projectiles spread from
-     * the centered direction using the given angle and
-     * number of projectiles to be fired.
-     *
-     * @param dir    center direction of the spread
-     * @param angle  angle which to spread at
-     * @param amount amount of directions to calculate
-     *
-     * @return the list of calculated directions
-     */
-    public static ArrayList<Vector> calcSpread(Vector dir, double angle, int amount) {
-        // Special cases
-        if (amount <= 0) {
-            return new ArrayList<>();
-        }
-
-        ArrayList<Vector> list = new ArrayList<Vector>();
-
-        // One goes straight if odd amount
-        if (amount % 2 == 1) {
-            list.add(dir);
-            amount--;
-        }
-
-        if (amount <= 0) {
-            return list;
-        }
-
-        // Get the base velocity
-        Vector base = dir.clone();
-        base.setY(0);
-        base.normalize();
-        vel.setX(1);
-        vel.setY(0);
-        vel.setZ(0);
-
-        // Get the vertical angle
-        double vBaseAngle = Math.acos(Math.max(-1, Math.min(base.dot(dir), 1)));
-        if (dir.getY() < 0) {
-            vBaseAngle = -vBaseAngle;
-        }
-        double hAngle = Math.acos(Math.max(-1, Math.min(1, base.dot(X_VEC)))) / DEGREE_TO_RAD;
-        if (dir.getZ() < 0) {
-            hAngle = -hAngle;
-        }
-
-        // Calculate directions
-        double angleIncrement = angle / (amount - 1);
-        for (int i = 0; i < amount / 2; i++) {
-            for (int direction = -1; direction <= 1; direction += 2) {
-                // Initial calculations
-                double bonusAngle = angle / 2 * direction - angleIncrement * i * direction;
-                double totalAngle = hAngle + bonusAngle;
-                double vAngle = vBaseAngle * Math.cos(bonusAngle * DEGREE_TO_RAD);
-                double x = Math.cos(vAngle);
-
-                // Get the velocity
-                vel.setX(x * Math.cos(totalAngle * DEGREE_TO_RAD));
-                vel.setY(Math.sin(vAngle));
-                vel.setZ(x * Math.sin(totalAngle * DEGREE_TO_RAD));
-
-                // Launch the projectile
-                list.add(vel.clone());
-            }
-        }
-
-        return list;
-    }
-
-    /**
-     * Calculates the locations to spawn projectiles to rain them down
-     * over a given location.
-     *
-     * @param loc    the center location to rain on
-     * @param radius radius of the circle
-     * @param height height above the target to use
-     * @param amount amount of locations to calculate
-     *
-     * @return list of locations to spawn projectiles
-     */
-    public static ArrayList<Location> calcRain(Location loc, double radius, double height, int amount) {
-        ArrayList<Location> list = new ArrayList<Location>();
-        if (amount <= 0) {
-            return list;
-        }
-        loc.add(0, height, 0);
-
-        // One would be in the center
-        list.add(loc);
-        amount--;
-
-        // Calculate locations
-        int tiers = (amount + 7) / 8;
-        for (int i = 0; i < tiers; i++) {
-            double rad = radius * (tiers - i) / tiers;
-            int tierNum = Math.min(amount, 8);
-            double increment = 360 / tierNum;
-            double angle = (i % 2) * 22.5;
-            for (int j = 0; j < tierNum; j++) {
-                double dx = Math.cos(angle) * rad;
-                double dz = Math.sin(angle) * rad;
-                Location l = loc.clone();
-                l.add(dx, 0, dz);
-                list.add(l);
-                angle += increment;
-            }
-            amount -= tierNum;
-        }
-
-        return list;
     }
 }

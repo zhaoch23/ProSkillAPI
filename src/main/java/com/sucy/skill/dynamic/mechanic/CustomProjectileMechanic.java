@@ -117,11 +117,11 @@ abstract public class CustomProjectileMechanic extends MechanicComponent impleme
      * @param level the level of the skill
      * @return true if fired at least one projectile, false otherwise
      */
-    protected boolean fireForEachTargets(LivingEntity caster,
-                                      List<LivingEntity> targets,
-                                      Settings settings,
-                                      SpreadType spread,
-                                      int level) {
+    protected boolean fireParticleProjectilesForEachTargets(LivingEntity caster,
+                                                            List<LivingEntity> targets,
+                                                            Settings settings,
+                                                            SpreadType spread,
+                                                            int level) {
         // Get common values
         int amount = (int) parseValues(caster, AMOUNT, level, 1.0);
         double speed = parseValues(caster, VELOCITY, level, 1.0);
@@ -141,7 +141,7 @@ abstract public class CustomProjectileMechanic extends MechanicComponent impleme
             if (spread == SpreadType.RAIN) {
                 double radius = parseValues(caster, RAIN_RADIUS, level, 2.0);
                 double height = parseValues(caster, HEIGHT, level, 8.0);
-                list = ParticleProjectile.rain(caster, level, loc, radius, height, amount, speed,
+                list = ParticleProjectile.rain(caster, loc, radius, height, amount, speed,
                         frequency, lifeSpan, gravity, pierce, collisionRadius, settings, this);
             } else {
                 Vector dir = target.getLocation().getDirection();
@@ -161,7 +161,6 @@ abstract public class CustomProjectileMechanic extends MechanicComponent impleme
                 double angle = parseValues(caster, ANGLE, level, 30.0);
                 list = ParticleProjectile.spread(
                         caster,
-                        level,
                         dir,
                         loc.add(looking).add(0, upward + 0.5, 0),
                         angle,

@@ -28,22 +28,10 @@ package com.sucy.skill.dynamic.mechanic;
 
 import com.sucy.skill.SkillAPI;
 import com.sucy.skill.api.Settings;
-import com.sucy.skill.api.particle.EffectPlayer;
-import com.sucy.skill.api.particle.target.FollowTarget;
 import com.sucy.skill.api.projectile.CustomProjectile;
-import com.sucy.skill.api.projectile.ParticleProjectile;
-import com.sucy.skill.api.projectile.ProjectileCallback;
 import com.sucy.skill.api.util.ParticleHelper;
-import com.sucy.skill.cast.CircleIndicator;
-import com.sucy.skill.cast.CylinderIndicator;
-import com.sucy.skill.cast.IIndicator;
-import com.sucy.skill.cast.IndicatorType;
-import com.sucy.skill.cast.ProjectileIndicator;
 import com.sucy.skill.dynamic.TempEntity;
-import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,7 +66,7 @@ public class ParticleProjectileMechanic extends CustomProjectileMechanic {
         copy.set(ParticleHelper.RADIUS_KEY, parseValues(caster, ParticleHelper.RADIUS_KEY, level, 0), 0);
 
         // Launch the projectile
-        return fireForEachTargets(caster, targets, copy, SpreadType.fromKey(spread), level);
+        return fireParticleProjectilesForEachTargets(caster, targets, copy, SpreadType.fromKey(spread), level);
     }
 
     /**

@@ -7,6 +7,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 public class ArmorStandInstance {
+    private static final Vector UP = new Vector(0, 1, 0);
     private final ArmorStand armorStand;
     private final LivingEntity target;
     private final boolean follow;
@@ -15,26 +16,11 @@ public class ArmorStandInstance {
     private double upward;
     private double right;
 
-    private static final Vector UP = new Vector(0, 1, 0);
-
-    public ArmorStandInstance(ArmorStand armorStand, LivingEntity target) {
+    public ArmorStandInstance(ArmorStand armorStand, LivingEntity target, BukkitRunnable tickTask) {
         this.armorStand = armorStand;
         this.target = target;
         this.follow = false;
-        this.tickTask = null;
-    }
-    public ArmorStandInstance(ArmorStand armorStand,
-                              LivingEntity target,
-                              double forward,
-                              double upward,
-                              double right) {
-        this.armorStand = armorStand;
-        this.target = target;
-        this.forward = forward;
-        this.upward = upward;
-        this.right = right;
-        this.follow = true;
-        this.tickTask = null;
+        this.tickTask = tickTask;
     }
 
     public ArmorStandInstance(ArmorStand armorStand,

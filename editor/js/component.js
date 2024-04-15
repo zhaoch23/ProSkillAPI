@@ -199,7 +199,8 @@ const Mechanic = {
     KETHER: {name: "Kether", container: false, construct: MechanicKether},
     Germ_Animation_Start: {name: "Germ Animation Start", container: false, construct: MechanicGermAnimationStart},
     Germ_Animation_Stop: {name: "Germ Animation Stop", container: false, construct: MechanicGermAnimationStop},
-    Germ_Play_Sound: {name: "Germ Play Sound", container: false, construct: MechanicGermPlaySound}
+    Germ_Play_Sound: {name: "Germ Play Sound", container: false, construct: MechanicGermPlaySound},
+    ARMOR_STAND_PROJECTILE: {name: "Armor Stand Projectile", container: true, construct: MechanicArmorStandProjectile}
 };
 
 let saveIndex;
@@ -1644,54 +1645,16 @@ function MechanicArmorStand() {
 
     this.description = 'Summons an armor stand that can be used as a marker or for item display (check Armor Mechanic for latter). Applies child components on the armor stand';
 
-    this.data.push(new StringValue('Armor Stand Key', 'key', 'default')
-        .setTooltip('The key to refer to the armorstand by. Only one armorstand of each key can be active per target at the time')
-    );
-    this.data.push(new AttributeValue('Duration', 'duration', 5, 0)
-        .setTooltip('How long the armorstand lasts before being deleted')
-    );
-    this.data.push(new StringValue('Name', 'name', 'Armor Stand')
-        .setTooltip('The name the armor stand displays')
-    );
-    this.data.push(new ListValue('Name visible', 'name-visible', ['True', 'False'], 'False')
-        .setTooltip('Whether or not the armorstand\'s name should be visible from afar')
-    );
+    addArmorStandOptions(this);
+
     this.data.push(new ListValue('Follow target', 'follow', ['True', 'False'], 'False')
         .setTooltip('Whether or not the armorstand should follow the target')
     );
-    this.data.push(new ListValue('Apply gravity', 'gravity', ['True', 'False'], 'True')
-        .setTooltip('Whether or not the armorstand should be affected by gravity')
-    );
-    this.data.push(new ListValue('Small', 'tiny', ['True', 'False'], 'False')
-        .setTooltip('Whether or not the armorstand should be small')
-    );
-    this.data.push(new ListValue('Show arms', 'arms', ['True', 'False'], 'False')
-        .setTooltip('Whether or not the armorstand should display its arms')
-    );
-    this.data.push(new ListValue('Show base plate', 'base', ['True', 'False'], 'False')
-        .setTooltip('Whether or not the armorstand should display its base plate')
-    );
-    this.data.push(new ListValue('Visible', 'visible', ['True', 'False'], 'True')
-        .setTooltip('Whether or not the armorstand should be visible')
-    );
-    this.data.push(new ListValue('Marker', 'marker', ['True', 'False'], 'True')
-        .setTooltip('Setting this to true will remove the armor stand\'s hitbox')
-    );
-    this.data.push(new AttributeValue('Forward Offset', 'forward', 0, 0)
-        .setTooltip('How far forward in front of the target the armorstand should be in blocks. A negative value will put it behind.')
-    );
-    this.data.push(new AttributeValue('Upward Offset', 'upward', 0, 0)
-        .setTooltip('How far above the target the armorstand should be in blocks. A negative value will put it below.')
-    );
-    this.data.push(new AttributeValue('Right Offset', 'right', 0, 0)
-        .setTooltip('How far to the right the armorstand should be of the target. A negative value will put it to the left.')
-    );
+
     this.data.push(new IntValue('Tick Period', 'period', -1)
         .setTooltip('多长时间触发一次Children. -1为不触发, 0为立刻触发, 1为每tick触发, 其余为每x tick触发')
     );
-    this.data.push(new StringValue('Remember Key', 'remember', '')
-        .setTooltip("是否记录盔甲架，后续可以使用Remember Target来获取. 为空则不记录")
-    );
+
     this.data.push(new StringListValue('Skills 一行一个', 'skills', [])
         .setTooltip('这会视为盔甲架释放的技能 你可以在后续给他属性，但造成伤害/治疗会以召唤者为伤害/治疗源(伤害/治疗属性来自于召唤者)')
     );
@@ -1719,6 +1682,18 @@ function MechanicArmorStandPose() {
 }
 
 extend('MechanicBlock', 'Component');
+
+function MechanicArmorStandProjectile() {
+    this.super('Armor Stand Projectile', Type.MECHANIC, true);
+
+    this.description = 'Summons an armor stand that can be used as a projectile. Applies child components on the armor stand';
+
+    addArmorStandOptions(this);
+
+    addProjectileOptions(this);
+}
+
+extend('MechanicArmorStandProjectile', 'Component');
 
 function MechanicBlock() {
     this.super('Block', Type.MECHANIC, false);
@@ -2242,10 +2217,9 @@ function MechanicItemProjectile() {
 
     this.description = 'Launches a projectile using an item as its visual that applies child components upon landing. The target passed on will be the collided target or the location where it landed if it missed.';
 
-
     this.data.push(new ListValue('Item', 'item', getMaterials, 'Jack O Lantern')
         .setTooltip('The item type to use as a projectile')
-    ),
+    );
     this.data.push(new IntValue('Item Data', 'item-data', 0)
         .setTooltip('The durability value for the item to use as a projectile, most notably for dyes or colored items like wool')
     );
@@ -2360,10 +2334,6 @@ function MechanicParticleAnimationArmorStand() {
 
     this.description = 'Plays an animated particle effect at the location of each target over time by applying various transformations.';
 
-    this.data.push(new StringValue('ArmorStand', 'armor-stand', 'none')
-        .setTooltip('是否生成盔甲架代替粒子')
-    );
-
     this.data.push(new IntValue('Steps', 'steps', 1, 0)
         .setTooltip('The number of times to play particles and apply translations each application.')
     );
@@ -2471,16 +2441,6 @@ function MechanicParticleProjectile() {
     this.description = 'Launches a projectile using particles as its visual that applies child components upon landing. The target passed on will be the collided target or the location where it landed if it missed.';
 
     addProjectileOptions(this);
-
-    this.data.push(new DoubleValue('Gravity', 'gravity', 0)
-        .setTooltip('How much gravity to apply each tick. Negative values make it fall while positive values make it rise')
-    );
-    this.data.push(new ListValue('Pierce', 'pierce', ['True', 'False'], 'False')
-        .setTooltip('Whether or not this projectile should pierce through initial targets and continue hitting those behind them')
-    );
-    this.data.push(new DoubleValue('Collision Radius', 'radius', 1.5)
-        .setTooltip('How large of a radius to check for collisions with entities')
-    );
 
     addParticleOptions(this);
 
@@ -3481,6 +3441,16 @@ function addProjectileOptions(component) {
     component.data.push(new AttributeValue('Right Offset', 'right', 0, 0)
         .setTooltip('How far to the right of the target the projectile should fire from. A negative value will put it to the left.')
     );
+
+    component.data.push(new DoubleValue('Gravity', 'gravity', 0)
+        .setTooltip('How much gravity to apply each tick. Negative values make it fall while positive values make it rise')
+    );
+    component.data.push(new ListValue('Pierce', 'pierce', ['True', 'False'], 'False')
+        .setTooltip('Whether or not this projectile should pierce through initial targets and continue hitting those behind them')
+    );
+    component.data.push(new DoubleValue('Collision Radius', 'radius', 1.5)
+        .setTooltip('How large of a radius to check for collisions with entities')
+    );
 }
 
 /**
@@ -3601,6 +3571,52 @@ function addEffectOptions(component, optional) {
     component.data.push(opt(new DoubleValue('Speed', '-particle-speed', 0.1)
         .setTooltip('Speed of the particle. For some particles controls other parameters, such as size.')
     ));
+}
+
+function addArmorStandOptions(component) {
+
+    component.data.push(new StringValue('Armor Stand Key', 'key', 'default')
+        .setTooltip('The key to refer to the armorstand by. Only one armorstand of each key can be active per target at the time')
+    );
+    component.data.push(new AttributeValue('Duration', 'duration', 5, 0)
+        .setTooltip('How long the armorstand lasts before being deleted')
+    );
+    component.data.push(new StringValue('Name', 'name', 'Armor Stand')
+        .setTooltip('The name the armor stand displays')
+    );
+    component.data.push(new ListValue('Name visible', 'name-visible', ['True', 'False'], 'False')
+        .setTooltip('Whether or not the armorstand\'s name should be visible from afar')
+    );
+    component.data.push(new ListValue('Apply gravity', 'gravity', ['True', 'False'], 'True')
+        .setTooltip('Whether or not the armorstand should be affected by gravity')
+    );
+    component.data.push(new ListValue('Small', 'tiny', ['True', 'False'], 'False')
+        .setTooltip('Whether or not the armorstand should be small')
+    );
+    component.data.push(new ListValue('Show arms', 'arms', ['True', 'False'], 'False')
+        .setTooltip('Whether or not the armorstand should display its arms')
+    );
+    component.data.push(new ListValue('Show base plate', 'base', ['True', 'False'], 'False')
+        .setTooltip('Whether or not the armorstand should display its base plate')
+    );
+    component.data.push(new ListValue('Visible', 'visible', ['True', 'False'], 'True')
+        .setTooltip('Whether or not the armorstand should be visible')
+    );
+    component.data.push(new ListValue('Marker', 'marker', ['True', 'False'], 'True')
+        .setTooltip('Setting this to true will remove the armor stand\'s hitbox')
+    );
+    component.data.push(new AttributeValue('Forward Offset', 'forward', 0, 0)
+        .setTooltip('How far forward in front of the target the armorstand should be in blocks. A negative value will put it behind.')
+    );
+    component.data.push(new AttributeValue('Upward Offset', 'upward', 0, 0)
+        .setTooltip('How far above the target the armorstand should be in blocks. A negative value will put it below.')
+    );
+    component.data.push(new AttributeValue('Right Offset', 'right', 0, 0)
+        .setTooltip('How far to the right the armorstand should be of the target. A negative value will put it to the left.')
+    );
+    component.data.push(new StringValue('Remember Key', 'remember', '')
+        .setTooltip("是否记录盔甲架，后续可以使用Remember Target来获取. 为空则不记录")
+    );
 }
 
 function appendOptional(value) {

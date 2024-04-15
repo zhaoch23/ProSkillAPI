@@ -291,5 +291,6 @@ public class ComponentRegistry {
         register(new GermAnimationStartMechanic());
         register(new GermAnimationStopMechanic());
         register(new GermPlaySoundMechanic());
+        register(new ArmorStandProjectileMechanic());
     }
 }

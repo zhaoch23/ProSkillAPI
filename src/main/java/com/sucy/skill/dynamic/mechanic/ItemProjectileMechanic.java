@@ -27,22 +27,11 @@
 package com.sucy.skill.dynamic.mechanic;
 
 import com.sucy.skill.SkillAPI;
-import com.sucy.skill.api.particle.EffectPlayer;
-import com.sucy.skill.api.particle.target.FollowTarget;
 import com.sucy.skill.api.projectile.CustomProjectile;
-import com.sucy.skill.api.projectile.ItemProjectile;
-import com.sucy.skill.api.projectile.ProjectileCallback;
-import com.sucy.skill.cast.CircleIndicator;
-import com.sucy.skill.cast.CylinderIndicator;
-import com.sucy.skill.cast.IIndicator;
-import com.sucy.skill.cast.IndicatorType;
-import com.sucy.skill.cast.ProjectileIndicator;
 import com.sucy.skill.dynamic.TempEntity;
 import com.sucy.skill.log.Logger;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.Vector;
@@ -95,7 +84,7 @@ public class ItemProjectileMechanic extends CustomProjectileMechanic {
         // Get other common values
         String spread = settings.getString(SPREAD, "cone").toLowerCase();
 
-        return fireForEachTargets(caster, targets, settings, SpreadType.fromKey(spread), level);
+        return fireParticleProjectilesForEachTargets(caster, targets, settings, SpreadType.fromKey(spread), level);
     }
 
     /**
