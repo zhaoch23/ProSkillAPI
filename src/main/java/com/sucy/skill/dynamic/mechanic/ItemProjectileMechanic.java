@@ -38,6 +38,7 @@ import com.sucy.skill.cast.IIndicator;
 import com.sucy.skill.cast.IndicatorType;
 import com.sucy.skill.cast.ProjectileIndicator;
 import com.sucy.skill.dynamic.TempEntity;
+import com.sucy.skill.log.Logger;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
@@ -52,74 +53,11 @@ import java.util.List;
 /**
  * Launches a projectile using an item as its visual that applies child components upon landing
  */
-public class ItemProjectileMechanic extends MechanicComponent implements ProjectileCallback {
+public class ItemProjectileMechanic extends CustomProjectileMechanic {
     private static final Vector UP = new Vector(0, 1, 0);
 
     private static final String ITEM    = "item";
     private static final String DATA    = "item-data";
-    private static final String SPEED   = "velocity";
-    private static final String ANGLE   = "angle";
-    private static final String AMOUNT  = "amount";
-    private static final String LEVEL   = "skill_level";
-    private static final String HEIGHT  = "height";
-    private static final String RADIUS  = "rain-radius";
-    private static final String SPREAD  = "spread";
-    private static final String ALLY    = "group";
-    private static final String RIGHT   = "right";
-    private static final String UPWARD  = "upward";
-    private static final String FORWARD = "forward";
-
-    private static final String USE_EFFECT = "use-effect";
-    private static final String EFFECT_KEY = "effect-key";
-
-    /**
-     * Creates the list of indicators for the skill
-     *
-     * @param list   list to store indicators in
-     * @param caster caster reference
-     * @param targets location to base location on
-     * @param level  the level of the skill to create for
-     */
-    @Override
-    public void makeIndicators(List<IIndicator> list, Player caster, List<LivingEntity> targets, int level) {
-        targets.forEach(target -> {
-            // Get common values
-            int amount = (int) parseValues(caster, AMOUNT, level, 1.0);
-            double speed = parseValues(caster, "velocity", level, 1);
-            String spread = settings.getString(SPREAD, "cone").toLowerCase();
-
-            // Apply the spread type
-            if (spread.equals("rain")) {
-                double radius = parseValues(caster, RADIUS, level, 2.0);
-
-                if (indicatorType == IndicatorType.DIM_2) {
-                    IIndicator indicator = new CircleIndicator(radius);
-                    indicator.moveTo(target.getLocation().add(0, 0.1, 0));
-                    list.add(indicator);
-                } else {
-                    double height = parseValues(caster, HEIGHT, level, 8.0);
-                    IIndicator indicator = new CylinderIndicator(radius, height);
-                    indicator.moveTo(target.getLocation());
-                    list.add(indicator);
-                }
-            } else {
-                Vector dir = target.getLocation().getDirection();
-                if (spread.equals("horizontal cone")) {
-                    dir.setY(0);
-                    dir.normalize();
-                }
-                double angle = parseValues(caster, ANGLE, level, 30.0);
-                ArrayList<Vector> dirs = CustomProjectile.calcSpread(dir, angle, amount);
-                Location loc = caster.getLocation().add(0, caster.getEyeHeight(), 0);
-                for (Vector d : dirs) {
-                    ProjectileIndicator indicator = new ProjectileIndicator(speed, 0.04);
-                    indicator.setDirection(d);
-                    indicator.moveTo(loc);
-                    list.add(indicator);
-                }
-            }
-        });
-    }
 
     @Override
     public String getKey() {
@@ -142,6 +80,7 @@ public class ItemProjectileMechanic extends MechanicComponent implements Project
             mat = Material.valueOf(settings.getString(ITEM).toUpperCase().replace(" ", "_"));
         } catch (Exception ex) {
             // Invalid or missing item material
+            Logger.invalid(settings.getString(ITEM) + " Item Material");
         }
         ItemStack item = new ItemStack(mat);
         int data = settings.getInt(DATA, 0);
@@ -154,69 +93,9 @@ public class ItemProjectileMechanic extends MechanicComponent implements Project
         }
 
         // Get other common values
-        double speed = parseValues(caster, SPEED, level, 3.0);
-        int amount = (int) parseValues(caster, AMOUNT, level, 1.0);
         String spread = settings.getString(SPREAD, "cone").toLowerCase();
-        boolean ally = settings.getString(ALLY, "enemy").toLowerCase().equals("ally");
 
-        // Fire from each target
-        for (LivingEntity target : targets) {
-            Location loc = target.getLocation();
-
-            // Apply the spread type
-            ArrayList<ItemProjectile> list;
-            if (spread.equals("rain")) {
-                double radius = parseValues(caster, RADIUS, level, 2.0);
-                double height = parseValues(caster, HEIGHT, level, 8.0);
-                list = ItemProjectile.rain(caster, loc, item, radius, height, speed, amount, this);
-            } else {
-                Vector dir = target.getLocation().getDirection();
-
-                double right = parseValues(caster, RIGHT, level, 0);
-                double upward = parseValues(caster, UPWARD, level, 0);
-                double forward = parseValues(caster, FORWARD, level, 0);
-
-                Vector looking = dir.clone().setY(0).normalize();
-                Vector normal = looking.clone().crossProduct(UP);
-                looking.multiply(forward).add(normal.multiply(right));
-
-                if (spread.equals("horizontal cone")) {
-                    dir.setY(0);
-                    dir.normalize();
-                }
-                dir.multiply(speed);
-                double angle = parseValues(caster, ANGLE, level, 30.0);
-                list = ItemProjectile.spread(
-                        caster,
-                        dir,
-                        loc.add(looking).add(0, 0.5 + upward, 0),
-                        item,
-                        angle,
-                        amount,
-                        this
-                );
-            }
-
-            // Set metadata for when the callback happens
-            for (ItemProjectile p : list) {
-                SkillAPI.setMeta(p, LEVEL, level);
-                p.setAllyEnemy(ally, !ally);
-            }
-
-            if (settings.getBool(USE_EFFECT, false)) {
-                EffectPlayer player = new EffectPlayer(settings);
-                for (CustomProjectile p : list) {
-                    player.start(
-                            new FollowTarget(p),
-                            settings.getString(EFFECT_KEY, skill.getName()),
-                            9999,
-                            level,
-                            true);
-                }
-            }
-        }
-
-        return targets.size() > 0;
+        return fireForEachTargets(caster, targets, settings, SpreadType.fromKey(spread), level);
     }
 
     /**

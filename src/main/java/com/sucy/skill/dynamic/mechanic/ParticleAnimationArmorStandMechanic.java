@@ -58,8 +58,6 @@ public class ParticleAnimationArmorStandMechanic extends MechanicComponent {
     private static final String H_CYCLES = "h-cycles";
     private static final String V_CYCLES = "v-cycles";
 
-    private static final String ARMOR_STAND = "armor-stand";
-
     @Override
     public String getKey() {
         return "particle animation armor stand";
@@ -83,7 +81,6 @@ public class ParticleAnimationArmorStandMechanic extends MechanicComponent {
         copy.set(ParticleHelper.PARTICLES_KEY, parseValues(caster, ParticleHelper.PARTICLES_KEY, level, 1), 0);
         copy.set(ParticleHelper.RADIUS_KEY, parseValues(caster, ParticleHelper.RADIUS_KEY, level, 0), 0);
         copy.set("level", level);
-        copy.set(ParticleHelper.ARMOR_STAND, settings.getString(ARMOR_STAND, "none"));
         new ParticleTask(caster, targets, level, copy);
         return targets.size() > 0;
     }
@@ -207,30 +204,13 @@ public class ParticleAnimationArmorStandMechanic extends MechanicComponent {
                     Location loc = target.getLocation();
 
                     // Calculate the target rotation and add that
-                    double targetAngle = loc.getYaw();
-                    double targetCos;
-                    double targetSin;
-                    if (false) {
-                        targetCos = Math.cos(Math.toRadians(targetAngle));
-                        targetSin = Math.sin(Math.toRadians(targetAngle));
-                        rotate(offset, targetCos, targetSin);
+                    rotate(offset, Math.cos(Math.toRadians(rots[j])), Math.sin(Math.toRadians(rots[j])));
+                    loc.add(offset);
+                    ParticleHelper.play(loc, settings);
+                    loc.subtract(offset);
 
-                        loc.add(offset);
-                        ParticleHelper.play(loc, settings);
-                        loc.subtract(offset);
-
-                        targetCos = Math.cos(Math.toRadians(-targetAngle));
-                        targetSin = Math.sin(Math.toRadians(-targetAngle));
-                        rotate(offset, targetCos, targetSin);
-                    } else {
-                        rotate(offset, Math.cos(Math.toRadians(rots[j])), Math.sin(Math.toRadians(rots[j])));
-                        loc.add(offset);
-                        ParticleHelper.play(loc, settings);
-                        loc.subtract(offset);
-
-                        rotate(offset, Math.cos(Math.toRadians(-rots[j])), Math.sin(Math.toRadians(-rots[j])));
-                        j += 1;
-                    }
+                    rotate(offset, Math.cos(Math.toRadians(-rots[j])), Math.sin(Math.toRadians(-rots[j])));
+                    j += 1;
                 }
 
                 // Update the lifespan of the animation

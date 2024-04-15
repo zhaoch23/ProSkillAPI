@@ -2246,11 +2246,11 @@ function MechanicItemProjectile() {
     this.data.push(new ListValue('Item', 'item', getMaterials, 'Jack O Lantern')
         .setTooltip('The item type to use as a projectile')
     ),
-        this.data.push(new IntValue('Item Data', 'item-data', 0)
-            .setTooltip('The durability value for the item to use as a projectile, most notably for dyes or colored items like wool')
-        ),
+    this.data.push(new IntValue('Item Data', 'item-data', 0)
+        .setTooltip('The durability value for the item to use as a projectile, most notably for dyes or colored items like wool')
+    );
 
-        addProjectileOptions(this);
+    addProjectileOptions(this);
     addEffectOptions(this, true);
 }
 
@@ -2470,10 +2470,6 @@ function MechanicParticleProjectile() {
 
     this.description = 'Launches a projectile using particles as its visual that applies child components upon landing. The target passed on will be the collided target or the location where it landed if it missed.';
 
-    this.data.push(new StringValue('ArmorStand', 'armor-stand', 'none')
-        .setTooltip('是否生成盔甲架代替粒子')
-    );
-
     addProjectileOptions(this);
 
     this.data.push(new DoubleValue('Gravity', 'gravity', 0)
@@ -2481,6 +2477,9 @@ function MechanicParticleProjectile() {
     );
     this.data.push(new ListValue('Pierce', 'pierce', ['True', 'False'], 'False')
         .setTooltip('Whether or not this projectile should pierce through initial targets and continue hitting those behind them')
+    );
+    this.data.push(new DoubleValue('Collision Radius', 'radius', 1.5)
+        .setTooltip('How large of a radius to check for collisions with entities')
     );
 
     addParticleOptions(this);

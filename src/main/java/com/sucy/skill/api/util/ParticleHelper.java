@@ -125,7 +125,9 @@ public class ParticleHelper {
      */
     public static final String SPEED_KEY = "speed";
 
-    public static final String ARMOR_STAND = "armor_stand";
+    public static final String REARRANGEMENT_CIRCLE = "circle";
+    public static final String REARRANGEMENT_SPHERE = "sphere";
+    public static final String REARRANGEMENT_HEMISPHERE = "hemisphere";
 
     private static final Random random = new Random();
 
@@ -156,22 +158,26 @@ public class ParticleHelper {
             int amount = (int) settings.getAttr(PARTICLES_KEY, level, 10);
 
             String arrangement = settings.getString(ARRANGEMENT_KEY).toLowerCase();
-            if (arrangement.equals("circle")) {
-                Direction dir = null;
-                if (settings.has(DIRECTION_KEY)) {
-                    try {
-                        dir = Direction.valueOf(settings.getString(DIRECTION_KEY));
-                    } catch (Exception ex) { /* Use default value */ }
-                }
-                if (dir == null) {
-                    dir = Direction.XZ;
-                }
+            switch (arrangement) {
+                case REARRANGEMENT_CIRCLE:
+                    Direction dir = null;
+                    if (settings.has(DIRECTION_KEY)) {
+                        try {
+                            dir = Direction.valueOf(settings.getString(DIRECTION_KEY));
+                        } catch (Exception ex) { /* Use default value */ }
+                    }
+                    if (dir == null) {
+                        dir = Direction.XZ;
+                    }
 
-                fillCircle(loc, particle, settings, radius, amount, dir);
-            } else if (arrangement.equals("sphere")) {
-                fillSphere(loc, particle, settings, radius, amount);
-            } else if (arrangement.equals("hemisphere")) {
-                fillHemisphere(loc, particle, settings, radius, amount);
+                    fillCircle(loc, particle, settings, radius, amount, dir);
+                    break;
+                case REARRANGEMENT_SPHERE:
+                    fillSphere(loc, particle, settings, radius, amount);
+                    break;
+                case REARRANGEMENT_HEMISPHERE:
+                    fillHemisphere(loc, particle, settings, radius, amount);
+                    break;
             }
         } else {
             play(loc, particle, settings);
@@ -196,11 +202,6 @@ public class ParticleHelper {
         final Material mat = Material.valueOf(settings.getString(MATERIAL_KEY, "DIRT").toUpperCase().replace(" ", "_"));
         final int type = settings.getInt(TYPE_KEY, 0);
         final int data = settings.getInt(DATA_KEY, 0);
-        if (settings.getString(ARMOR_STAND) != null) {
-            if (!settings.getString(ARMOR_STAND, "none").equals("none")) {
-                return;
-            }
-        }
 
         try {
             // Normal bukkit effects

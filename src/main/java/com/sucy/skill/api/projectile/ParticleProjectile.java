@@ -42,38 +42,18 @@ import java.util.UUID;
  * A fake projectile that plays particles along its path
  */
 public class ParticleProjectile extends CustomProjectile {
-    /**
-     * Settings key for the projectile speed
-     */
-    public static final String SPEED = "velocity";
-
-    /**
-     * Settings key for the projectile lifespan
-     */
-    private static final String LIFESPAN = "lifespan";
-
-    /**
-     * Settings key for the projectile's frequency of playing particles
-     */
-    private static final String FREQUENCY = "frequency";
-
-    /**
-     * Settings key for the projectile's effective gravity
-     */
-    private static final String GRAVITY = "gravity";
-
-    private static final String PIERCE = "pierce";
 
     private Location loc;
 
-    public Settings settings;
+    final public Settings settings;
     private Vector vel;
-    private int steps;
+    private final int steps;
     private int count;
-    private int freq;
+    private final int freq;
     private int life;
-    private Vector gravity;
-    private boolean pierce;
+    private final Vector gravity;
+    private final boolean pierce;
+    private final double collisionRadius;
 
     public UUID id;
 
@@ -81,25 +61,38 @@ public class ParticleProjectile extends CustomProjectile {
      * Constructor
      *
      * @param shooter  entity that shot the projectile
-     * @param level    level to use for scaling the speed
      * @param loc      initial location of the projectile
-     * @param settings settings for the projectile
+     * @param speed    speed of the projectile
+     * @param frequency frequency of the particles
+     * @param lifespan lifespan of the projectile
+     * @param gravity  gravity of the projectile
+     * @param pierce   whether or not the projectile pierces through entities
+     * @param collisionRadius radius for colliding
+     * @param settings settings for the particles
      */
-    public ParticleProjectile(LivingEntity shooter, int level, Location loc, Settings settings) {
+    public ParticleProjectile(LivingEntity shooter,
+                              Location loc,
+                              double speed,
+                              double frequency,
+                              int lifespan,
+                              double gravity,
+                              boolean pierce,
+                              double collisionRadius,
+                              Settings settings) {
         super(shooter);
 
         this.loc = loc;
-        this.settings = settings;
         this.id = UUID.randomUUID();
-        this.vel = loc.getDirection().multiply(settings.getAttr(SPEED, level, 1.0));
-        this.freq = (int) (20 * settings.getDouble(FREQUENCY, 0.5));
-        this.life = (int) (settings.getDouble(LIFESPAN, 2) * 20);
-        this.gravity = new Vector(0, settings.getDouble(GRAVITY, 0), 0);
-        this.pierce = settings.getBool(PIERCE, false);
-
+        this.vel = loc.getDirection().multiply(speed);
+        this.freq = (int) (20 * frequency);
+        this.life = (int) (lifespan * 20);
+        this.gravity = new Vector(0, gravity, 0);
+        this.pierce = pierce;
+        this.collisionRadius = collisionRadius;
+        this.settings = settings;
         steps = (int) Math.ceil(vel.length() * 2);
         vel.multiply(1.0 / steps);
-        gravity.multiply(1.0 / steps);
+        this.gravity.multiply(1.0 / steps);
         Bukkit.getPluginManager().callEvent(new ParticleProjectileLaunchEvent(this));
     }
 
@@ -152,7 +145,7 @@ public class ParticleProjectile extends CustomProjectile {
      */
     @Override
     protected double getCollisionRadius() {
-        return 1.5;
+        return collisionRadius;
     }
 
     /**
@@ -203,7 +196,7 @@ public class ParticleProjectile extends CustomProjectile {
         if (count >= freq) {
             count = 0;
             ParticleHelper.play(loc, settings);
-            Bukkit.getPluginManager().callEvent(new ParticleProjectileRuningEvent(this, loc));
+            Bukkit.getPluginManager().callEvent(new ParticleProjectileRunningEvent(this, loc));
         }
 
         // Lifespan
@@ -221,19 +214,39 @@ public class ParticleProjectile extends CustomProjectile {
      * @param level    level to use for scaling the speed
      * @param center   the center direction of the spread
      * @param loc      location to shoot from
-     * @param settings settings to use when firing
      * @param angle    angle of the spread
      * @param amount   number of projectiles to fire
+     * @param speed    speed of the projectiles
+     * @param frequency frequency of the particles
+     * @param lifespan lifespan of the projectiles
+     * @param gravity  gravity of the projectiles
+     * @param pierce   whether or not the projectiles pierce through entities
+     * @param collisionRadius radius for colliding
+     * @param settings settings for the particles
      * @param callback optional callback for when projectiles hit
      * @return list of fired projectiles
      */
-    public static ArrayList<ParticleProjectile> spread(LivingEntity shooter, int level, Vector center, Location loc, Settings settings, double angle, int amount, ProjectileCallback callback) {
+    public static ArrayList<ParticleProjectile> spread(LivingEntity shooter,
+                                                       int level,
+                                                       Vector center,
+                                                       Location loc,
+                                                       double angle,
+                                                       int amount,
+                                                       double speed,
+                                                       double frequency,
+                                                       int lifespan,
+                                                       double gravity,
+                                                       boolean pierce,
+                                                       double collisionRadius,
+                                                       Settings settings,
+                                                       ProjectileCallback callback) {
         ArrayList<Vector> dirs = calcSpread(center, angle, amount);
         ArrayList<ParticleProjectile> list = new ArrayList<>();
         for (Vector dir : dirs) {
             Location l = loc.clone();
             l.setDirection(dir);
-            ParticleProjectile p = new ParticleProjectile(shooter, level, l, settings);
+            ParticleProjectile p = new ParticleProjectile(shooter, l, speed, frequency,
+                    lifespan, gravity, pierce, collisionRadius, settings);
             p.setCallback(callback);
             list.add(p);
         }
@@ -246,20 +259,40 @@ public class ParticleProjectile extends CustomProjectile {
      * @param shooter  entity shooting the projectiles
      * @param level    level to use for scaling the speed
      * @param center   the center location to rain on
-     * @param settings settings to use when firing
      * @param radius   radius of the circle
      * @param height   height above the center location
      * @param amount   number of projectiles to fire
+     * @param speed    speed of the projectiles
+     * @param frequency frequency of the particles
+     * @param lifespan lifespan of the projectiles
+     * @param gravity  gravity of the projectiles
+     * @param pierce   whether or not the projectiles pierce through entities
+     * @param collisionRadius radius for colliding
+     * @param settings settings for the particles
      * @param callback optional callback for when projectiles hit
      * @return list of fired projectiles
      */
-    public static ArrayList<ParticleProjectile> rain(LivingEntity shooter, int level, Location center, Settings settings, double radius, double height, int amount, ProjectileCallback callback) {
+    public static ArrayList<ParticleProjectile> rain(
+            LivingEntity shooter,
+            int level, Location center,
+            double radius,
+            double height,
+            int amount,
+            double speed,
+            double frequency,
+            int lifespan,
+            double gravity,
+            boolean pierce,
+            double collisionRadius,
+            Settings settings,
+            ProjectileCallback callback) {
         Vector vel = new Vector(0, 1, 0);
         ArrayList<Location> locs = calcRain(center, radius, height, amount);
         ArrayList<ParticleProjectile> list = new ArrayList<>();
         for (Location l : locs) {
             l.setDirection(vel);
-            ParticleProjectile p = new ParticleProjectile(shooter, level, l, settings);
+            ParticleProjectile p = new ParticleProjectile(shooter, l, speed, frequency,
+                    lifespan, gravity, pierce, collisionRadius, settings);
             p.setCallback(callback);
             list.add(p);
         }

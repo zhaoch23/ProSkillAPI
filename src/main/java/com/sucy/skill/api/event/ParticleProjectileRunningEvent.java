@@ -34,7 +34,7 @@ import org.bukkit.event.HandlerList;
 /**
  * <p>粒子飞行时触发</p>
  */
-public class ParticleProjectileRuningEvent extends Event {
+public class ParticleProjectileRunningEvent extends Event {
     private static final HandlerList handlers = new HandlerList();
 
     private final ParticleProjectile projectile;
@@ -47,7 +47,7 @@ public class ParticleProjectileRuningEvent extends Event {
      * @param projectile the projectile that hit something
      * @param loc
      */
-    public ParticleProjectileRuningEvent(ParticleProjectile projectile, Location loc) {
+    public ParticleProjectileRunningEvent(ParticleProjectile projectile, Location loc) {
         this.projectile = projectile;
         this.location = loc;
     }
