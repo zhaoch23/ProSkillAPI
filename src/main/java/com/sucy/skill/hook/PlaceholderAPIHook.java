@@ -1,5 +1,6 @@
 package com.sucy.skill.hook;
 
+import com.germ.germplugin.api.GermClientAPI;
 import com.sucy.skill.SkillAPI;
 import com.sucy.skill.api.attribute.AttributeAPI;
 import com.sucy.skill.api.classes.RPGClass;
@@ -23,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * SkillAPI © 2018
@@ -43,6 +45,14 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
     public static String request(OfflinePlayer player, String identifier) {
 
         PlayerData playerData = SkillAPI.getPlayerData(player);
+
+        if (identifier.startsWith("stamina")) {
+            if (!player.isOnline())
+                return "0";
+
+            CompletableFuture<String> future = GermClientAPI.reqPlaceholderValue((Player) player, "stamina");
+            return future.join();
+        }
 
         if (identifier.startsWith("group_")) {
             if (!SkillAPI.getClasses().isEmpty()) {
